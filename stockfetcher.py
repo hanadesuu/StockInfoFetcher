@@ -45,19 +45,23 @@ async def get_stock_count(style_code, product_code):
         try:
             # 发起 POST 请求
             response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=10)  # 增加超时限制
-            
             # 解析返回的 JSON 数据
             if response.status_code == 200:
                 data = response.json().get('data')
+                code = response.json().get('code')
+                if code == '1016':
+                    print('重试')
                 print("查询结果：", data)
                 if isinstance(data, list) and len(data) > 0:
                     stock = data[0].get('stock', '库存信息不可用')
-                    print('------库存为', stock)
+                    print('库存为', stock)
                     return stock
                 else:
-                    print("未找到库存信息")
+                    print("未找到库存信息", data, response.json())
+                    return '未找到库存信息'
             else:
                 print(f"请求失败，状态码: {response.status_code}, 返回内容: {response.text}")
+                return '请求失败'
                 
         except ConnectTimeout:
             print("请求超时，无法连接到服务器。")
@@ -66,7 +70,7 @@ async def get_stock_count(style_code, product_code):
             print(f"发生错误: {e}")
             return '发生错误'
     else:
-        return 'error'
+        return '商品编号为空'
 
 # 异步更新库存的函数
 async def update_stock_for_excel(file_path, output_file_path):
